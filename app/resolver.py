@@ -1,3 +1,4 @@
+# --- app/resolver.py ---
 import re, asyncio
 from .llm import call_llm
 
@@ -7,14 +8,12 @@ async def _replace_batch(html: str):
     matches = list(PATTERN.finditer(html))
     if not matches:
         return html, False
-
     tasks = [call_llm(m.group(1)) for m in matches]
     results = await asyncio.gather(*tasks)
-
     parts, last = [], 0
-    for m, res in zip(matches, results):
-        parts.append(html[last : m.start()])
-        parts.append(res["html"])
+    for m, snippet in zip(matches, results):
+        parts.append(html[last:m.start()])
+        parts.append(snippet)
         last = m.end()
     parts.append(html[last:])
     return "".join(parts), True
