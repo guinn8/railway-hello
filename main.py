@@ -1,14 +1,21 @@
-# main.py
-import os
+import os, re
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
 import uvicorn
+from app.llm import call_llm
+from app.resolver import resolve
+from app.prompt import get_prompt
 
+SCRIPT_RE = re.compile(r"<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>", re.I)
 app = FastAPI()
 
-@app.get("/")
-async def read_root():
-    return {"message": "Hello, Railway!"}
+@app.get("/", response_class=HTMLResponse)
+async def root():
+    sys_msg = get_prompt("create_page", n_ads=3)          # ← tidy getter
+    page = await call_llm("create_page", {}, sys=sys_msg)
+    body = SCRIPT_RE.sub("", await resolve(page["body_html"]))
+    html = f'<!doctype html><html><head><title>{page["title"]}</title></head><body>{body}</body></html>'
+    return HTMLResponse(html)
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))  # Railway injects PORT at runtime
-    uvicorn.run("main:app", host="0.0.0.0", port=port)
+    uvicorn.run("main:app", host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
