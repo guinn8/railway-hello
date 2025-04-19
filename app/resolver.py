@@ -1,11 +1,10 @@
 # app/resolver.py
 import os, re, asyncio
-from .llm import call_llm, llm   # re‑use AsyncOpenAI instance
+from .llm import call_llm, llm
 
 PATTERN = re.compile(r"\{\{CALL:(\w+)(?::([^}]+))?\}\}")
 
 async def _dalle_image(prompt: str) -> str:
-    """Generate one DALL·E image and wrap it in inlinable HTML."""
     resp = await llm.images.generate(
         model=os.getenv("DALLE_MODEL", "dall-e-2"),
         prompt=prompt,
@@ -24,10 +23,8 @@ async def _replace_batch(html: str):
 
     async def _dispatch(fn_name: str, hint: str | None):
         if fn_name == "make_image":
-            # hint **must** exist because create_page enforces it
             return await _dalle_image(hint or "retro computer art")
-        # default: LLM‑powered fragment
-        return await call_llm(fn_name, {"hint": hint} if hint else None)
+        return (await call_llm(fn_name, {"hint": hint} if hint else None))["html"]
 
     tasks = [_dispatch(*m.groups()) for m in matches]
     results = await asyncio.gather(*tasks)
