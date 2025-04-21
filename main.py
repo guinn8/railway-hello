@@ -1,19 +1,25 @@
 # main.py
-import os, re
+import os, re, json
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 import uvicorn
-from app.llm import call_llm
-from app.resolver import resolve
+from app.store import store
+from app.builders import builders
+from app.expander import expand
 
 SCRIPT_RE = re.compile(r"<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>", re.I)
 app = FastAPI()
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
-    page = await call_llm("create_page", {"n_ads": 3})   # → dict now
-    body = SCRIPT_RE.sub("", await resolve(page["html"]))
-    css  = page.get("css", "")
+    # Fetch the top-level page artifact
+    art = await store.get("create_page:", builders["create_page"])
+    page = json.loads(art.data)
+
+    # Expand all {{CALL:...}} tokens in the HTML
+    body = SCRIPT_RE.sub("", await expand(page["html"]))
+    css = page.get("css", "")
+
     html = f"<!doctype html><html><head><title>Retro‑DL</title><style>{css}</style></head><body>{body}</body></html>"
     return HTMLResponse(html)
 
