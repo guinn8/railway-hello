@@ -8,15 +8,16 @@ PROJECT_ROOT="$(dirname "$0")"
 
 echo "Creating context blob..."
 
-# List of relevant files (order matters for clarity)
+# Static top-level files
 FILES=(
   "main.py"
   "requirements.txt"
-  "plan.md"
-  "app/prompt.py"
-  "app/llm.py"
-  "app/resolver.py"
 )
+
+# Append all Python files under app/
+while IFS= read -r -d $'\0' file; do
+  FILES+=("${file#$PROJECT_ROOT/}")
+done < <(find "$PROJECT_ROOT/app" -type f -name "*.py" -print0 | sort -z)
 
 for file in "${FILES[@]}"; do
   if [[ -f "$PROJECT_ROOT/$file" ]]; then
