@@ -1,7 +1,7 @@
+# app/builders.py
 import json, os
-from typing import Optional
 from .artifact import Artifact
-from .llm import call_llm, llm
+from .llm import call_llm, load_prompt, llm   # keep existing import order
 
 # -------- helper for DALL·E images --------
 async def _dalle_image(prompt: str) -> str:
@@ -10,7 +10,6 @@ async def _dalle_image(prompt: str) -> str:
         prompt=prompt,
         n=1,
         size="256x256",
-        quality="standard"
     )
     url = resp.data[0].url
     safe_alt = prompt.replace('"', "")
@@ -18,12 +17,24 @@ async def _dalle_image(prompt: str) -> str:
 
 # -------- concrete Builders (deterministic ↔ cacheable) --------
 async def build_page(_: str) -> Artifact:
-    page = await call_llm("create_page", {"n_ads": 3})
+    base = load_prompt("create_page")
+    # tack on templating instructions without string-format placeholders
+    prompt = (
+        f"{base}\n\n"
+        "Include exactly 3 literal placeholders of the form "
+        "'{{CALL:make_ad}}' **or** '{{CALL:make_ad:YOUR_HINT}}'. "
+        "Also include **exactly one** image placeholder of the form "
+        "'{{CALL:make_image:YOUR_PROMPT}}'."
+    )
+    page = await call_llm(prompt)
     return Artifact("json", json.dumps(page).encode())
 
 async def build_ad(key: str) -> Artifact:
-    _, hint = key.split(":", 1)  # key looks like "make_ad:foo"
-    resp = await call_llm("make_ad", {"hint": hint} if hint else None)
+    _, hint = key.split(":", 1)              # key looks like "make_ad:foo"
+    base = load_prompt("make_ad")
+    extra = f' Base the creative on this hint: "{hint}".' if hint else ""
+    prompt = f"{base}{extra}"
+    resp = await call_llm(prompt)
     return Artifact("html", resp["html"].encode())
 
 async def build_image(key: str) -> Artifact:
