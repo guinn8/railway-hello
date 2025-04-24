@@ -4,19 +4,23 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 import uvicorn
 
+from app.store import store
 from app.expander import expand
 from app.artifact import Artifact
 from app.llm import call_llm
+from app.builders import AdTool, ImageTool
 
 SCRIPT_RE = re.compile(r"<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>", re.I)
 app = FastAPI()
 
-async def build_page(intro: str) -> Artifact:
-    prompt = intro + """
+async def build_page(_: str) -> Artifact:
+    CREATE_PAGE_BASE = """\
+    You are building a retro download page.
     Do NOT include <script> tags.
     Include exactly 2 {{CALL:make_ad:…}} placeholders and 1 {{CALL:make_image:…}} placeholder.
-    Return a JSON object: {{"html": "...", "css": "..."}} — no markdown fences."""
-    page = await call_llm(prompt)
+    Return a JSON object: {"html": "...", "css": "..."} — no markdown fences.
+    """
+    page = await call_llm(CREATE_PAGE_BASE.strip())
     obj = page if isinstance(page, dict) else json.loads(page)
     body = SCRIPT_RE.sub("", await expand(obj["html"]))
     css = obj.get("css", "")
@@ -28,7 +32,7 @@ async def build_page(intro: str) -> Artifact:
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
-    art = await build_page("You are building a retro download page.")
+    art = await store.get("create_page:", build_page)
     return HTMLResponse(art.data.decode())
 
 if __name__ == "__main__":
