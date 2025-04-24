@@ -4,17 +4,6 @@ from .artifact import Artifact
 from .llm import call_llm, llm
 from .tools import Tool, tools
 
-async def _dalle_image(prompt: str) -> str:
-    resp = await llm.images.generate(
-        model=os.getenv("DALLE_MODEL", "dall-e-2"),
-        prompt=prompt,
-        n=1,
-        size="256x256",
-    )
-    url = resp.data[0].url
-    safe_alt = prompt.replace('"', "")
-    return f'<figure class="retro-img"><img src="{url}" alt="{safe_alt}"></figure>'
-
 class AdTool(Tool):
     def __init__(self) -> None:
         super().__init__(
@@ -43,9 +32,23 @@ class ImageTool(Tool):
             placeholder="{{CALL:make_image:YOUR_PROMPT}}",
         )
 
+    async def _dalle_image(prompt: str) -> str:
+        resp = await llm.images.generate(
+            model=os.getenv("DALLE_MODEL", "dall-e-2"),
+            prompt=prompt,
+            n=1,
+            size="256x256",
+        )
+        url = resp.data[0].url
+        safe_alt = prompt.replace('"', "")
+        return f'<figure class="retro-img"><img src="{url}" alt="{safe_alt}"></figure>'
+    
     async def __call__(self, arg: str) -> Artifact:
-        html = await _dalle_image(arg or "retro computer art")
+        html = await self._dalle_image(arg or "retro computer art")
         return Artifact("html", html.encode())
 
 
 
+
+AdTool()
+ImageTool()

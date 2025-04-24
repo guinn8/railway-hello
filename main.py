@@ -21,8 +21,6 @@ async def build_page(_: str) -> Artifact:
     Include exactly 1 {{CALL:make_ad:…}} placeholders and 0 {{CALL:make_image:…}} placeholder.
     Return a JSON object: {"html": "...", "css": "..."} — no markdown fences.
     """
-    AdTool()
-    ImageTool()
 
     page = await call_llm(CREATE_PAGE_BASE.strip())
     return Artifact("json", json.dumps(page).encode())
