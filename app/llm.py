@@ -1,5 +1,5 @@
 # app/llm.py
-import os, json, importlib.resources as pkg
+import os, json
 from openai import AsyncOpenAI
 
 llm   = AsyncOpenAI()
@@ -21,3 +21,16 @@ async def call_llm(prompt: str):
         messages=messages,
     )
     return resp.choices[0].message.content
+
+# ---------- NEW: streaming helper ----------
+async def stream_llm(prompt: str):
+    messages = [{"role": "user", "content": prompt}]
+    stream = await llm.chat.completions.create(
+        model=MODEL,
+        messages=messages,
+        stream=True,
+    )
+    async for chunk in stream:
+        delta = chunk.choices[0].delta
+        if getattr(delta, "content", None):
+            yield delta.content
