@@ -19,6 +19,7 @@ async def call_llm(prompt: str):
     resp = await llm.chat.completions.create(
         model=MODEL,
         messages=messages,
+        temperature=1.3
     )
     return resp.choices[0].message.content
 

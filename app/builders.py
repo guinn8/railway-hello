@@ -15,8 +15,6 @@ class AdTool(Tool):
     async def __call__(self, arg: str) -> Artifact:
         prompt = """\
         Return a JSON object: {"html": "<div>…</div>"}  
-        Provide one retro banner-ad fragment only.  
-        No fences.
         """
         if arg:
             prompt += f' Base the creative on this hint: "{arg}".'
@@ -40,7 +38,7 @@ class ImageTool(Tool):
         )
         url = resp.data[0].url
         safe_alt = prompt.replace('"', "")
-        return f'<figure class="retro-img"><img src="{url}" alt="{safe_alt}"></figure>'
+        return f'<figure class="img"><img src="{url}" alt="{safe_alt}"></figure>'
     
     async def __call__(self, arg: str) -> Artifact:
         html = await self._dalle_image(arg)

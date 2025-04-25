@@ -20,10 +20,7 @@ async def build_page(intro: str):
         intro
         + "\n\n(Return everything below strictly as **json**.)\n"
         + """
-Do NOT include <script> tags.
-Include exactly
-2 {{CALL:make_ad:…}} placeholder and
-2 {{CALL:make_image:…}} placeholders.
+Include exactly 2 {{CALL:make_ad:…}} placeholder and include exactly 2  {{CALL:make_image:…}} placeholders.
 Return a JSON object: {"html": "...", "css": "..."} — no markdown fences.
 """
     )
@@ -34,7 +31,7 @@ Return a JSON object: {"html": "...", "css": "..."} — no markdown fences.
     css      = obj.get("css", "")
 
     head = (
-        "<!doctype html><html><head><title>Retro-DL</title>"
+        "<!doctype html><html><head><title>_internet_</title>"
         f"<style>{css}</style></head><body>"
     )
     tail = "</body></html>"
@@ -55,7 +52,7 @@ Return a JSON object: {"html": "...", "css": "..."} — no markdown fences.
 async def root():
 
     intro = await call_llm(
-        "give me a cool idea man, like water ballon or mechanical frog but never say that."
+        "give me a cool idea man, like water ballon or mechanical frog but never say that. I'm not looking for a business it could be an existing but exotic historical event, product, or strange concept."
     )
     gen = await build_page(intro)
     return StreamingResponse(gen, media_type="text/html")
