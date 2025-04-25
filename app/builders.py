@@ -1,7 +1,7 @@
 # app/builders.py
 import json, os
 from .artifact import Artifact
-from .llm import call_llm, llm
+from .llm import call_llm_json, llm
 from .tools import Tool, tools
 
 class AdTool(Tool):
@@ -20,7 +20,7 @@ class AdTool(Tool):
         """
         if arg:
             prompt += f' Base the creative on this hint: "{arg}".'
-        resp = await call_llm(prompt)
+        resp = await call_llm_json(prompt)
         return Artifact("html", resp["html"].encode())
 
 class ImageTool(Tool):

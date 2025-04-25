@@ -5,7 +5,7 @@ from openai import AsyncOpenAI
 llm   = AsyncOpenAI()
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
-async def call_llm(prompt: str):
+async def call_llm_json(prompt: str):
     messages = [{"role": "user", "content": prompt}]
     resp = await llm.chat.completions.create(
         model=MODEL,
@@ -13,3 +13,11 @@ async def call_llm(prompt: str):
         response_format={"type": "json_object"}
     )
     return json.loads(resp.choices[0].message.content)
+
+async def call_llm(prompt: str):
+    messages = [{"role": "user", "content": prompt}]
+    resp = await llm.chat.completions.create(
+        model=MODEL,
+        messages=messages,
+    )
+    return resp.choices[0].message.content
