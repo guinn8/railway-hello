@@ -3,7 +3,7 @@ import re
 from .store import store
 from .tools import tools
 
-TOKEN_RE = re.compile(r"\{\{CALL:([^}:]+)(?::([^}]+))?\}\}")
+TOKEN_RE = re.compile(r"\{\{CALL:([^}:]+)(?::([^}]*))?\}\}")
 
 async def expand(src: str) -> str:
     while True:

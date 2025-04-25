@@ -19,7 +19,7 @@ async def build_page(intro: str) -> Artifact:
         + "\n\n(Return everything below strictly as **json**.)\n"
         + """
 Do NOT include <script> tags.
-Include exactly 3 {{CALL:make_ad:…}} placeholder and 1 {{CALL:make_image:…}} placeholders.
+Include exactly 1 {{CALL:make_ad:…}} placeholder and 0 {{CALL:make_image:…}} placeholders.
 Return a JSON object: {"html": "...", "css": "..."} — no markdown fences.
 """)
     page = await call_llm_json(prompt.strip())
