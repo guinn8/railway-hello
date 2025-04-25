@@ -20,6 +20,7 @@ async def build_page(intro: str):
         intro
         + "\n\n(Return everything below strictly as **json**.)\n"
         + """
+        Make something ambitious for your client!
 Include exactly 2 {{CALL:make_ad:…}} placeholder and include exactly 2  {{CALL:make_image:…}} placeholders.
 Return a JSON object: {"html": "...", "css": "..."} — no markdown fences.
 """
@@ -52,7 +53,7 @@ Return a JSON object: {"html": "...", "css": "..."} — no markdown fences.
 async def root():
 
     intro = await call_llm(
-        "give me a cool idea man, like water ballon or mechanical frog but never say that. I'm not looking for a business it could be an existing but exotic historical event, product, or strange concept."
+        "give me a cool idea man, like water ballon or mechanical frog but never say that. I'm not looking for a business it could be an existing but interesting historical event, product, or strange concept."
     )
     gen = await build_page(intro)
     return StreamingResponse(gen, media_type="text/html")
