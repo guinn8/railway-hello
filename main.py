@@ -1,21 +1,19 @@
 # main.py
-import os, re, json, time
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, StreamingResponse
+import os, re, json
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
 import uvicorn
 
-from app.store import store
-from app.expander import expand, expand_stream
-from app.artifact import Artifact
+from app.expander import expand_stream
 from app.llm import call_llm_json, call_llm
-from app.builders import AdTool, ImageTool
+from app.builders import AdTool, ImageTool    # ensure tools are registered
 
 SCRIPT_RE = re.compile(r"<script\b[^<]*(?:(?!</script>)<[^<]*)*</script>", re.I)
 app = FastAPI()
 
 
 # ─────────────────────────────────────────────────────────────
-# Page builder  →  returns *async generator* of html chunks
+# Streaming page builder → yields head, expanded body, tail
 # ─────────────────────────────────────────────────────────────
 async def build_page(intro: str):
     prompt = (
@@ -32,7 +30,6 @@ Return a JSON object: {"html": "...", "css": "..."} — no markdown fences.
     page = await call_llm_json(prompt.strip())
     obj = page if isinstance(page, dict) else json.loads(page)
 
-    # strip any <script> the LLM might have snuck in
     body_src = SCRIPT_RE.sub("", obj["html"])
     css      = obj.get("css", "")
 
@@ -42,47 +39,26 @@ Return a JSON object: {"html": "...", "css": "..."} — no markdown fences.
     )
     tail = "</body></html>"
 
-    async def _generator():
+    async def _gen():
         yield head
         async for chunk in expand_stream(body_src):
             yield chunk
         yield tail
 
-    return _generator()          # an *async generator* object
+    return _gen()
 
 
 # ─────────────────────────────────────────────────────────────
-# Route “/” — buffered by default, stream if header set
+# Single route – always streaming
 # ─────────────────────────────────────────────────────────────
 @app.get("/")
-async def root(request: Request):
+async def root():
+
     intro = await call_llm(
         "give me a cool idea man, like water ballon but never say that."
     )
-
-    # --- streaming branch -------------------------------------------------
-    if request.headers.get("X-Stream") == "1":
-        gen = await build_page(intro)          # no caching for now
-        return StreamingResponse(gen, media_type="text/html")
-
-    # --- buffered branch  (cached via store) ------------------------------
-    async def builder(_: str) -> Artifact:
-        g = await build_page(intro)
-        html = "".join([part async for part in g])
-        return Artifact("html", html.encode())
-
-    art = await store.get("create_page:", builder)
-    return HTMLResponse(art.data.decode())
-
-
-# ─────────────────────────────────────────────────────────────
-# Legacy streaming demo (kept until Patch 4 cleanup)
-# ─────────────────────────────────────────────────────────────
-from app.llm import stream_llm
-
-@app.get("/stream-demo")
-async def stream_demo():
-    return StreamingResponse(stream_llm("pong"), media_type="text/plain")
+    gen = await build_page(intro)
+    return StreamingResponse(gen, media_type="text/html")
 
 
 if __name__ == "__main__":
