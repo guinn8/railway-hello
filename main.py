@@ -22,8 +22,8 @@ async def build_page(intro: str):
         + """
 Do NOT include <script> tags.
 Include exactly
-1 {{CALL:make_ad:…}} placeholder and
-0 {{CALL:make_image:…}} placeholders.
+2 {{CALL:make_ad:…}} placeholder and
+2 {{CALL:make_image:…}} placeholders.
 Return a JSON object: {"html": "...", "css": "..."} — no markdown fences.
 """
     )
@@ -55,7 +55,7 @@ Return a JSON object: {"html": "...", "css": "..."} — no markdown fences.
 async def root():
 
     intro = await call_llm(
-        "give me a cool idea man, like water ballon but never say that."
+        "give me a cool idea man, like water ballon or mechanical frog but never say that."
     )
     gen = await build_page(intro)
     return StreamingResponse(gen, media_type="text/html")
